@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ওপেক্স মডেলে রুফটপ সোলার — তথ্য ফর্ম</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f3f7f4; --card:#ffffff; --ink:#18291f; --muted:#5b6d63; --line:#d6e1da;
+  --brand:#0e7a54; --brand-d:#0a5f41; --brand-ink:#ffffff; --soft:#e6f3ec;
+  --err:#c0392b; --err-bg:#fdecea; --warn:#9a6700; --warn-bg:#fff6dd;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Bengali","Kalpurush",system-ui,sans-serif;line-height:1.6}
+#wrap{max-width:720px;margin:0 auto;padding:16px 16px 48px}
+header.top{text-align:center;padding:12px 0 6px}
+header.top h1{font-size:1.25rem;margin:0 0 2px;line-height:1.4}
+header.top p{margin:0;color:var(--muted);font-size:.9rem}
+.progress{height:8px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:14px}
+.progress .bar{height:100%;background:var(--brand);transition:width .25s}
+.steplabel{display:flex;justify-content:space-between;gap:8px;margin:8px 2px 6px;font-weight:600;font-size:.95rem}
+#saved{color:var(--brand);font-weight:500;font-size:.85rem}
+.dots{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.dot{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--line);background:var(--card);color:var(--muted);font:inherit;font-size:.85rem;cursor:pointer}
+.dot.ok{border-color:var(--brand);color:var(--brand)}
+.dot.on{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.dot:disabled{opacity:.45;cursor:not-allowed}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 18px}
+.card h2{margin:0 0 4px;font-size:1.15rem}
+.card .sub{margin:0 0 16px;color:var(--muted);font-size:.9rem}
+.ctx{background:var(--soft);border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:.9rem}
+.ctx b{font-weight:600}
+.field{margin-bottom:16px}
+.field>label{display:block;font-weight:600;margin-bottom:6px;font-size:.95rem}
+.field .req{color:var(--err)}
+input,select{width:100%;font:inherit;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);min-height:44px}
+.dpbtn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--muted);min-height:44px;cursor:pointer}
+.dpbtn.has{color:var(--ink)}
+.dpbtn svg{flex:none;color:var(--brand)}
+.dpbtn:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:var(--brand)}
+.field.has-err .dpbtn{border-color:var(--err);background:var(--err-bg)}
+.dpov{position:fixed;inset:0;background:transparent;display:grid;place-items:center;z-index:50;padding:16px}
+.dpov[hidden]{display:none}
+.dpcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;width:100%;max-width:340px;box-shadow:0 10px 40px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06)}
+.dphead{display:flex;gap:6px;align-items:center;margin-bottom:10px}
+.dphead select{min-height:40px;padding:6px 8px;flex:1;width:auto}
+.dpnav{flex:none;width:40px;height:40px;border:1.5px solid var(--line);background:transparent;border-radius:10px;font-size:1.2rem;cursor:pointer;color:var(--ink)}
+.dpnav:hover{background:var(--soft)}
+.dpgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.dpwd{font-size:.8rem;color:var(--muted);padding:4px 0;font-weight:600}
+.dpd{min-height:38px;border:1.5px solid transparent;background:transparent;border-radius:50%;font:inherit;cursor:pointer;color:var(--ink)}
+.dpd:hover{background:var(--soft)}
+.dpd.today{border-color:var(--brand)}
+.dpd.sel{background:var(--brand);color:var(--brand-ink)}
+.dpfoot{display:flex;justify-content:space-between;margin-top:10px}
+input:focus,select:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:var(--brand)}
+.hint{font-size:.82rem;color:var(--muted);margin-top:4px}
+.err{display:none;font-size:.85rem;color:var(--err);margin-top:4px}
+.field.has-err input,.field.has-err select{border-color:var(--err);background:var(--err-bg)}
+.field.has-err .err{display:block}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.row2{grid-template-columns:1fr}}
+.site{display:grid;grid-template-columns:1fr 1fr 44px;gap:10px;align-items:start;padding:12px;border:1px dashed var(--line);border-radius:10px;margin-bottom:10px}
+.site .field{margin:0}
+@media (max-width:520px){.site{grid-template-columns:1fr 44px}.site .field:nth-child(1){grid-column:1/2}.site .field:nth-child(2){grid-column:1/2}.site .rm{grid-row:1/3;grid-column:2/3}}
+.rm{margin-top:28px;height:44px;width:44px;border:1.5px solid var(--line);background:transparent;color:var(--err);border-radius:10px;font-size:1rem;cursor:pointer}
+.bidder{padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+.bidder .tag{font-size:.8rem;font-weight:600;color:var(--brand);margin-bottom:8px}
+.bidder .field{margin-bottom:10px}
+.bidder .row2{grid-template-columns:2fr 1fr}
+@media (max-width:520px){.bidder .row2{grid-template-columns:1fr}}
+.note{padding:10px 12px;border-radius:10px;font-size:.88rem;margin:0 0 14px;background:var(--warn-bg);color:var(--warn)}
+.btn{font:inherit;font-weight:600;border-radius:10px;padding:11px 18px;min-height:44px;cursor:pointer;border:1.5px solid var(--brand);background:var(--brand);color:var(--brand-ink)}
+.btn:hover{background:var(--brand-d);border-color:var(--brand-d)}
+.btn.ghost{background:transparent;color:var(--brand)}
+.btn.ghost:hover{background:var(--soft)}
+.btn.link{border:none;background:none;color:var(--muted);font-weight:500;text-decoration:underline;padding:6px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.nav{display:flex;justify-content:space-between;gap:10px;margin-top:16px}
+.nav .btn{flex:1}
+.nav .btn.ghost{flex:0 0 auto;min-width:110px}
+.addbtn{margin-top:2px}
+.review h3{font-size:1rem;margin:18px 0 6px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:4px}
+.review h3 button{font:inherit;font-size:.82rem;font-weight:500;color:var(--brand);background:none;border:none;cursor:pointer;text-decoration:underline}
+.review dl{margin:0}
+.review .it{display:grid;grid-template-columns:42% 1fr;gap:10px;padding:6px 0;font-size:.9rem;border-bottom:1px dotted var(--line)}
+@media (max-width:520px){.review .it{grid-template-columns:1fr;gap:0}}
+.review dt{color:var(--muted)}
+.review dd{margin:0;white-space:pre-line;word-break:break-word}
+.review .empty{color:var(--muted)}
+.done{text-align:center;padding:12px 4px}
+.done .ok{width:64px;height:64px;border-radius:50%;background:var(--soft);color:var(--brand);display:grid;place-items:center;font-size:2rem;margin:0 auto 10px}
+.done .actions{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.submit-err{background:var(--err-bg);color:var(--err);padding:10px 12px;border-radius:10px;margin-top:12px;font-size:.9rem;white-space:pre-line}
+dialog{border:1px solid var(--line);border-radius:14px;padding:22px;max-width:420px;width:calc(100% - 32px);background:var(--card);color:var(--ink);font-family:inherit}
+dialog::backdrop{background:transparent}
+dialog{box-shadow:0 10px 40px rgba(0,0,0,.28)}
+dialog h3{margin:0 0 6px}
+dialog p{margin:0 0 16px;color:var(--muted)}
+dialog .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <header class="top">
+    <h1>ওপেক্স মডেলে রুফটপ সোলার স্থাপনের অগ্রগতি</h1>
+    <p>তথ্য সংগ্রহ ফর্ম</p>
+  </header>
+  <div id="app"></div>
+  <div style="text-align:center;margin-top:14px"><button class="btn link" data-act="reset">ড্রাফট মুছে নতুন করে শুরু করুন</button></div>
+</div>
+
+<div class="dpov" id="dpOverlay" hidden><div class="dpcard" id="dpCard"></div></div>
+
+<dialog id="confirmDlg">
+  <h3>জমা দেওয়ার আগে নিশ্চিত করুন</h3>
+  <p id="confirmText"></p>
+  <div class="acts">
+    <button class="btn ghost" id="confirmNo">না, আবার দেখব</button>
+    <button class="btn" id="confirmYes">হ্যাঁ, জমা দিন</button>
+  </div>
+</dialog>
+
+<script>
+const CONFIG = {
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwW3rGUbCQzsjQwMgJ_Fq4-R8sdZQen36-JadrsWLZyWA7PCYPpOkL9hUBHB33PD6o/exec',
+  STORAGE_KEY: 'opex_solar_draft_v1'
+};
+
+const DISTRICTS = [
+  {en:'Rajshahi',bn:'রাজশাহী'},{en:'Chapai-Nawabganj',bn:'চাঁপাইনবাবগঞ্জ'},{en:'Natore',bn:'নাটোর'},
+  {en:'Sirajganj',bn:'সিরাজগঞ্জ'},{en:'Pabna',bn:'পাবনা'},{en:'Bogura',bn:'বগুড়া'},
+  {en:'Joypurhat',bn:'জয়পুরহাট'},{en:'Naogaon',bn:'নওগাঁ'},{en:'Rangpur',bn:'রংপুর'},
+  {en:'Gaibandha',bn:'গাইবান্ধা'},{en:'Kurigram',bn:'কুড়িগ্রাম'},{en:'Lalmonirhat',bn:'লালমনিরহাট'},
+  {en:'Nilphamari',bn:'নীলফামারী'},{en:'Dinajpur',bn:'দিনাজপুর'},{en:'Panchagarh',bn:'পঞ্চগড়'},
+  {en:'Thakurgaon',bn:'ঠাকুরগাঁও'}
+];
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const BN = '০১২৩৪৫৬৭৮৯';
+const toEn = s => String(s ?? '').replace(/[০-৯]/g, d => BN.indexOf(d));
+const bn = n => String(n).replace(/\d/g, d => BN[d]);
+const fmtDate = v => { if (!v) return ''; const [y,m,d] = v.split('-'); return `${d}/${m}/${y}`; };
+const num = v => { const t = toEn(v).replace(/,/g,'').trim(); return t === '' ? NaN : Number(t); };
+const distOf = key => DISTRICTS.find(x => x.en === key);
+
+const defaultData = () => ({
+  district:'', upazila:'', office:'', ministry:'',
+  distCoType:'', distCo:'',
+  headName:'', headDesig:'', headMobile:'',
+  callDate:'', deadline:'',
+  capacity:'', sites:[{name:'',kw:''}],
+  bidderCount:'', top3:[{name:'',share:''},{name:'',share:''},{name:'',share:''}],
+  company:'', startDate:'', cod:''
+});
+
+let state = { step:0, maxStep:0, data:defaultData(), done:null };
+
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY));
+    if (s && s.data){
+      state.step = Math.min(s.step || 0, 8);
+      state.maxStep = Math.min(s.maxStep || 0, 8);
+      state.data = Object.assign(defaultData(), s.data);
+      if (!state.data.distCoType){
+        const t = String(state.data.distCo||'');
+        if (/pbs|পিবিএস/i.test(t)) state.data.distCoType = 'PBS';
+        else if (/nesco|নেসকো/i.test(t)) state.data.distCoType = 'NESCO';
+        if (['নেসকো','পিবিএস'].includes(t.trim())) state.data.distCo = '';
+      }
+      if (!Array.isArray(state.data.sites) || !state.data.sites.length) state.data.sites = [{name:'',kw:''}];
+      while (state.data.top3.length < 3) state.data.top3.push({name:'',share:''});
+    }
+  }catch(e){}
+}
+let flashT;
+function save(){
+  try{
+    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify({step:state.step, maxStep:state.maxStep, data:state.data, savedAt:Date.now()}));
+    const el = $('#saved'); if (el){ el.textContent = '✓ ড্রাফট সংরক্ষিত'; clearTimeout(flashT); flashT = setTimeout(()=>{ const e2=$('#saved'); if(e2) e2.textContent=''; }, 1200); }
+  }catch(e){}
+}
+function clearDraft(){ try{ localStorage.removeItem(CONFIG.STORAGE_KEY); }catch(e){} }
+
+function norm(d){
+  const c = JSON.parse(JSON.stringify(d));
+  for (const k of Object.keys(c)) if (typeof c[k] === 'string') c[k] = c[k].trim();
+  c.headMobile = toEn(c.headMobile).replace(/[\s-]/g,'');
+  c.capacity = toEn(c.capacity).replace(/,/g,'').trim();
+  c.bidderCount = toEn(c.bidderCount).trim();
+  c.sites.forEach(s => { s.name = s.name.trim(); s.kw = toEn(s.kw).replace(/,/g,'').trim(); });
+  c.top3.forEach(b => { b.name = b.name.trim(); b.share = toEn(b.share).replace(/[%\s]/g,''); });
+  return c;
+}
+
+function field(key, label, inner, opts = {}){
+  return `<div class="field" data-field="${key}">
+    <label>${label}${opts.req ? ' <span class="req">*</span>' : ''}</label>${inner}
+    ${opts.hint ? `<div class="hint">${opts.hint}</div>` : ''}<div class="err"></div></div>`;
+}
+const inp = (k, o = {}) => `<input data-k="${k}" type="${o.type||'text'}" value="${esc(state.data[k])}" ${o.mode?`inputmode="${o.mode}"`:''} ${o.ph?`placeholder="${esc(o.ph)}"`:''} autocomplete="off">`;
+const inpA = (arr, i, f, o = {}) => `<input data-arr="${arr}" data-i="${i}" data-f="${f}" type="text" value="${esc(state.data[arr][i][f])}" ${o.mode?`inputmode="${o.mode}"`:''} ${o.ph?`placeholder="${esc(o.ph)}"`:''} autocomplete="off">`;
+
+const req = (E, d, k, msg) => { if (!String(d[k]).trim()) E[k] = msg; };
+const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v);
+const MONTHS=['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+const WD=['র','সো','ম','বু','বৃ','শু','শ'];
+const pad=n=>String(n).padStart(2,'0');
+const dateLabel=v=>{ if(!isDate(v)) return ''; const [y,m,d]=v.split('-').map(Number); return `${bn(d)} ${MONTHS[m-1]}, ${bn(y)}`; };
+const ICON='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></svg>';
+const dateInp=k=>{ const v=state.data[k]; return `<button type="button" class="dpbtn ${v?'has':''}" data-act="dp-open" data-k="${k}">${ICON}<span>${v?dateLabel(v):'তারিখ নির্বাচন করুন'}</span></button>`; };
+
+const STEPS = [
+  { title:'জেলা নির্বাচন',
+    render:()=>`<h2>জেলা নির্বাচন</h2><p class="sub">যে জেলার তথ্য দিচ্ছেন সেটি বেছে নিন। তথ্য ওই জেলার শিটে জমা হবে।</p>`
+      + field('district','জেলা',
+        `<select data-k="district"><option value="">— জেলা নির্বাচন করুন —</option>${DISTRICTS.map((x,i)=>`<option value="${x.en}" ${state.data.district===x.en?'selected':''}>${bn(i+1)}. ${x.bn} (${x.en})</option>`).join('')}</select>`,{req:1}),
+    validate:(E,d)=>{ if(!d.district) E.district='একটি জেলা নির্বাচন করুন'; } },
+
+  { title:'দপ্তরের তথ্য',
+    render:()=>`<h2>দপ্তরের তথ্য</h2><p class="sub">উপজেলা, দপ্তর/অফিস এবং মন্ত্রণালয়/বিভাগ।</p>`
+      + field('upazila','উপজেলা',inp('upazila'),{req:1})
+      + field('office','দপ্তর/অফিসের নাম',inp('office'),{req:1})
+      + field('ministry','মন্ত্রণালয়/বিভাগ',inp('ministry'),{req:1}),
+    validate:(E,d)=>{ req(E,d,'upazila','উপজেলার নাম লিখুন'); req(E,d,'office','দপ্তর/অফিসের নাম লিখুন'); req(E,d,'ministry','মন্ত্রণালয়/বিভাগ লিখুন'); } },
+
+  { title:'বিদ্যুৎ বিতরণ সংস্থা',
+    render:()=>{
+      const t = state.data.distCoType;
+      return `<h2>বিদ্যুৎ বিতরণ সংস্থা</h2><p class="sub">আগে সংস্থার ধরন বেছে নিন, তারপর বিস্তারিত লিখুন।</p>`
+      + field('distCoType','কোন বিদ্যুৎ বিতরণ সংস্থার গ্রাহক',
+        `<select data-k="distCoType"><option value="">— নির্বাচন করুন —</option>${['NESCO','PBS'].map(o=>`<option value="${o}" ${t===o?'selected':''}>${o==='NESCO'?'নেসকো (NESCO)':'পিবিএস (PBS)'}</option>`).join('')}</select>`,{req:1})
+      + (t ? field('distCo', t==='NESCO' ? 'নেসকো — এলাকা/জোনের নাম' : 'পিবিএস — এলাকা/জোনের নাম',
+          inp('distCo'),
+          {req:1, hint: t==='NESCO' ? 'উদাহরণ: Natore, NESCO &nbsp;|&nbsp; Rajshahi-4, NESCO' : 'উদাহরণ: PBS-1, Natore &nbsp;|&nbsp; PBS-1, Rajshahi'}) : '');
+    },
+    validate:(E,d)=>{
+      if(!d.distCoType) E.distCoType='নেসকো বা পিবিএস নির্বাচন করুন';
+      else if(!d.distCo) E.distCo = d.distCoType==='NESCO' ? 'যেমন: Natore, NESCO' : 'যেমন: PBS-1, Natore';
+    } },
+
+  { title:'দপ্তর প্রধানের তথ্য',
+    render:()=>`<h2>দরপত্র আহ্বানের দায়িত্বপ্রাপ্ত দপ্তর প্রধান</h2><p class="sub">নাম, পদবি ও মোবাইল নম্বর।</p>`
+      + field('headName','নাম',inp('headName'),{req:1})
+      + field('headDesig','পদবি',inp('headDesig'),{req:1})
+      + field('headMobile','মোবাইল নম্বর',inp('headMobile',{mode:'tel',ph:'01XXXXXXXXX'}),{req:1}),
+    validate:(E,d)=>{
+      req(E,d,'headName','নাম লিখুন'); req(E,d,'headDesig','পদবি লিখুন');
+      if(!d.headMobile) E.headMobile='মোবাইল নম্বর লিখুন';
+      else if(!/^(?:\+?88)?01[3-9]\d{8}$/.test(d.headMobile)) E.headMobile='সঠিক মোবাইল নম্বর দিন (যেমন: 01712345678)';
+    } },
+
+  { title:'দরপত্রের তারিখ',
+    render:()=>`<h2>দরপত্রের তারিখ</h2><p class="sub">ক্যালেন্ডার থেকে তারিখ বেছে নিন।</p>`
+      + field('callDate','দরপত্র আহ্বানের তারিখ (দিন/মাস/বছর)',dateInp('callDate'),{req:1})
+      + field('deadline','দরপত্র জমা দেওয়ার শেষ সময় (তারিখ)',dateInp('deadline'),{req:1}),
+    validate:(E,d)=>{
+      if(!d.callDate) E.callDate='তারিখ নির্বাচন করুন';
+      if(!d.deadline) E.deadline='তারিখ নির্বাচন করুন';
+      else if(d.callDate && d.deadline < d.callDate) E.deadline='জমার শেষ তারিখ আহ্বানের তারিখের আগে হতে পারে না';
+    } },
+
+  { title:'সোলার ক্যাপাসিটি',
+    render:()=>`<h2>সোলার সিস্টেমের ক্যাপাসিটি</h2><p class="sub">আহ্বানকৃত দরপত্রের মোট ক্যাপাসিটি এবং স্থাপনা অনুযায়ী ব্রেকডাউন।</p>`
+      + field('capacity','আহ্বানকৃত দরপত্রে সোলার সিস্টেমের ক্যাপাসিটি (কিলোওয়াট)',inp('capacity',{mode:'decimal',ph:'যেমন: 150'}),{req:1})
+      + `<div style="font-weight:600;margin:8px 0 4px;font-size:.95rem">স্থাপনা অনুযায়ী ক্যাপাসিটির ব্রেকডাউন <span class="req" style="color:var(--err)">*</span></div>
+         <div class="hint" style="margin-bottom:8px">একটি স্থাপনা হলে একটিই দিন। একাধিক হলে "+ আরেকটি স্থাপনা যোগ করুন" চেপে প্রতিটির নাম ও ক্যাপাসিটি দিন।</div>`
+      + `<div id="sites">${sitesHtml()}</div>
+         <button class="btn ghost addbtn" data-act="addsite" type="button">+ আরেকটি স্থাপনা যোগ করুন</button>
+         <div class="hint" id="sitesHint" style="margin-top:8px"></div>`,
+    after:()=>updateSitesHint(),
+    validate:(E,d)=>{
+      if(d.capacity==='') E.capacity='মোট ক্যাপাসিটি লিখুন';
+      else if(!(num(d.capacity)>0)) E.capacity='সঠিক সংখ্যা দিন (০ এর বেশি)';
+      d.sites.forEach((s,i)=>{
+        if(!s.name) E[`sites.${i}.name`]='স্থাপনার নাম দিন';
+        if(s.kw==='') E[`sites.${i}.kw`]='ক্যাপাসিটি দিন';
+        else if(!(num(s.kw)>0)) E[`sites.${i}.kw`]='সঠিক ক্যাপাসিটি দিন';
+      });
+    } },
+
+  { title:'বিনিয়োগকারী',
+    render:()=>`<h2>বিনিয়োগকারীর তথ্য</h2><p class="sub">দরপত্র জমাদানকারী সংখ্যা এবং মূল্যায়নে নির্বাচিত প্রথম তিনজনের ছাদ ভাড়া বাবদ অফার করা % শেয়ার।</p>`
+      + field('bidderCount','কতজন বিনিয়োগকারি দরপত্র জমা প্রদান করেছেন',inp('bidderCount',{mode:'numeric',ph:'যেমন: ৫'}),{req:1})
+      + `<div style="font-weight:600;margin:8px 0 4px;font-size:.95rem">নির্বাচিত প্রথম তিনজন — ছাদ ভাড়া বাবদ কে কত % শেয়ার অফার করেছেন</div>
+         <div class="hint" style="margin-bottom:8px">বিনিয়োগকারী ৩ জনের কম হলে যতজন আছেন ততজনের তথ্য দিলেই হবে।</div>`
+      + state.data.top3.map((b,i)=>`<div class="bidder"><div class="tag">${['প্রথম','দ্বিতীয়','তৃতীয়'][i]} বিনিয়োগকারী</div><div class="row2">`
+          + field(`top3.${i}.name`,'প্রতিষ্ঠানের নাম',inpA('top3',i,'name'),{req:1})
+          + field(`top3.${i}.share`,'অফার (%)',inpA('top3',i,'share',{mode:'decimal',ph:'যেমন: ১২.৫'}),{req:1})
+          + `</div></div>`).join(''),
+    validate:(E,d)=>{
+      if(d.bidderCount==='') E.bidderCount='সংখ্যা লিখুন';
+      else if(!/^\d+$/.test(d.bidderCount) || Number(d.bidderCount)<1) E.bidderCount='১ বা তার বেশি পূর্ণ সংখ্যা দিন';
+      const need = /^\d+$/.test(d.bidderCount) ? Math.min(3, Number(d.bidderCount)) : 3;
+      d.top3.forEach((b,i)=>{
+        if(i < need || b.name || b.share){
+          if(!b.name) E[`top3.${i}.name`]='প্রতিষ্ঠানের নাম দিন';
+          if(b.share==='') E[`top3.${i}.share`]='% শেয়ার দিন';
+          else if(!(num(b.share)>=0 && num(b.share)<=100)) E[`top3.${i}.share`]='০ থেকে ১০০ এর মধ্যে দিন';
+        }
+      });
+    } },
+
+  { title:'চুক্তি ও কাজ',
+    render:()=>`<h2>চুক্তি, কাজ শুরু ও COD</h2><p class="sub">সব ঘর পূরণ করা আবশ্যক।</p>`
+      + field('company','চুক্তি সম্পাদনের জন্য সম্মত বিনিয়োগকারী প্রতিষ্ঠানের নাম',inp('company'),{req:1})
+      + field('startDate','সোলার সিস্টেম স্থাপনের জন্য কাজ শুরুর তারিখ',dateInp('startDate'),{req:1})
+      + field('cod','কমার্শিয়াল অপারেশন ডেট (COD) এর তারিখ',dateInp('cod'),{req:1}),
+    validate:(E,d)=>{
+      req(E,d,'company','প্রতিষ্ঠানের নাম লিখুন');
+      if(!d.startDate) E.startDate='তারিখ নির্বাচন করুন';
+      if(!d.cod) E.cod='তারিখ নির্বাচন করুন';
+      else if(d.startDate && d.cod < d.startDate) E.cod='COD তারিখ কাজ শুরুর তারিখের আগে হতে পারে না';
+    } },
+
+  { title:'যাচাই ও জমা',
+    render:()=>reviewHtml(),
+    validate:()=>{} }
+];
+const LAST = STEPS.length - 1;
+
+function sitesHtml(){
+  return state.data.sites.map((s,i)=>`<div class="site">`
+    + field(`sites.${i}.name`,'স্থাপনার নাম',inpA('sites',i,'name',{ph:'যেমন: প্রধান ভবন'}),{req:1})
+    + field(`sites.${i}.kw`,'ক্যাপাসিটি (কিলোওয়াট)',inpA('sites',i,'kw',{mode:'decimal'}),{req:1})
+    + (state.data.sites.length>1 ? `<button class="rm" data-act="rmsite" data-i="${i}" type="button" aria-label="স্থাপনা মুছুন">✕</button>` : '<span></span>')
+    + `</div>`).join('');
+}
+function updateSitesHint(){
+  const el = $('#sitesHint'); if(!el) return;
+  const d = norm(state.data);
+  const filled = d.sites.filter(s => s.kw!=='' && !isNaN(num(s.kw)));
+  if(!filled.length){ el.textContent=''; return; }
+  const sum = filled.reduce((a,s)=>a+num(s.kw),0);
+  const cap = num(d.capacity);
+  const r = Math.round(sum*1000)/1000;
+  let t = `স্থাপনাগুলোর যোগফল: ${bn(r)} কিলোওয়াট`;
+  if(!isNaN(cap) && Math.abs(cap-sum)>0.0005) t += ` — মোট ক্যাপাসিটি (${bn(cap)}) এর সাথে মিলছে না`;
+  el.textContent = t;
+  el.style.color = (!isNaN(cap) && Math.abs(cap-sum)>0.0005) ? 'var(--warn)' : 'var(--muted)';
+}
+
+function reviewData(){
+  const d = norm(state.data), ds = distOf(d.district) || {bn:'',en:''};
+  const v = x => x ? esc(x) : '<span class="empty">—</span>';
+  const head = [d.headName, d.headDesig, d.headMobile].filter(Boolean).join('\n');
+  const sites = d.sites.filter(s=>s.name||s.kw).map((s,i)=>`${bn(i+1)}. ${s.name}: ${s.kw} কিলোওয়াট`).join('\n');
+  const top = d.top3.filter(b=>b.name||b.share).map((b,i)=>`${bn(i+1)}. ${b.name} — ${b.share}%`).join('\n');
+  return [
+    {t:'জেলা', s:0, rows:[['জেলা', ds.bn?`${ds.bn} (${ds.en})`:'']]},
+    {t:'দপ্তরের তথ্য', s:1, rows:[['উপজেলা',d.upazila],['দপ্তর/অফিসের নাম',d.office],['মন্ত্রণালয়/বিভাগ',d.ministry]]},
+    {t:'বিদ্যুৎ বিতরণ সংস্থা', s:2, rows:[['সংস্থার ধরন',d.distCoType],['সংস্থার নাম/এলাকা',d.distCo]]},
+    {t:'দপ্তর প্রধান', s:3, rows:[['নাম, পদবি ও মোবাইল নম্বর',head]]},
+    {t:'দরপত্রের তারিখ', s:4, rows:[['আহ্বানের তারিখ',fmtDate(d.callDate)],['জমার শেষ তারিখ',fmtDate(d.deadline)]]},
+    {t:'সোলার ক্যাপাসিটি', s:5, rows:[['মোট ক্যাপাসিটি (কিলোওয়াট)',d.capacity],['স্থাপনা অনুযায়ী ব্রেকডাউন',sites]]},
+    {t:'বিনিয়োগকারী', s:6, rows:[['দরপত্র জমাদানকারী সংখ্যা',d.bidderCount],['প্রথম তিনজনের অফার (ছাদ ভাড়া %)',top]]},
+    {t:'চুক্তি ও কাজ', s:7, rows:[['চুক্তিতে সম্মত প্রতিষ্ঠান',d.company],['কাজ শুরুর তারিখ',fmtDate(d.startDate)],['COD তারিখ',fmtDate(d.cod)]]},
+  ].map(sec=>({...sec, rows:sec.rows.map(([k,val])=>[k,v(val)])}));
+}
+function reviewHtml(){
+  return `<h2>তথ্য যাচাই করুন</h2><p class="sub">সব ঠিক থাকলে নিচের "জমা দিন" বাটনে চাপুন। কিছু ঠিক করতে চাইলে সংশ্লিষ্ট অংশের "সম্পাদনা" চাপুন।</p>
+    <div class="review">${reviewData().map(sec=>`<h3>${sec.t}<button data-act="goto" data-i="${sec.s}" type="button">সম্পাদনা</button></h3><dl>${sec.rows.map(([k,val])=>`<div class="it"><dt>${k}</dt><dd>${val}</dd></div>`).join('')}</dl>`).join('')}</div>
+    <div id="submitErr"></div>`;
+}
+
+function render(){
+  const app = $('#app');
+  if(state.done){ return renderDone(); }
+  const n = STEPS.length, s = state.step;
+  app.innerHTML = `
+    <div class="progress"><div class="bar" style="width:${(s+1)/n*100}%"></div></div>
+    <div class="steplabel"><span>ধাপ ${bn(s+1)} / ${bn(n)} · ${STEPS[s].title}</span><span id="saved"></span></div>
+    <div class="dots">${STEPS.map((x,i)=>`<button type="button" class="dot ${i===s?'on':''} ${i<=state.maxStep?'ok':''}" data-act="goto" data-i="${i}" ${i>state.maxStep?'disabled':''} aria-label="ধাপ ${bn(i+1)}: ${x.title}">${bn(i+1)}</button>`).join('')}</div>
+    <section class="card">${STEPS[s].render()}</section>
+    <div class="nav">
+      ${s>0?`<button class="btn ghost" data-act="back" type="button">‹ পিছনে</button>`:`<span></span>`}
+      ${s<LAST?`<button class="btn" data-act="next" type="button">সংরক্ষণ করে পরবর্তী ›</button>`:`<button class="btn" data-act="submit" type="button">জমা দিন</button>`}
+    </div>`;
+  if(STEPS[s].after) STEPS[s].after();
+}
+function renderDone(){
+  const ds = distOf(state.done.district) || {bn:''};
+  $('#app').innerHTML = `<section class="card done"><div class="ok">✓</div>
+    <h2>তথ্য সফলভাবে জমা হয়েছে</h2>
+    <p class="sub">${ds.bn} জেলার শিটে সংরক্ষিত হয়েছে${state.done.serial?` (ক্রমিক নং ${bn(state.done.serial)})`:''}।</p>
+    <div class="actions">
+      <button class="btn" data-act="again-same" type="button">একই জেলায় আরেকটি এন্ট্রি করুন</button>
+      <button class="btn ghost" data-act="again-new" type="button">অন্য জেলার জন্য নতুন এন্ট্রি</button>
+    </div></section>`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function clearErrors(){ document.querySelectorAll('.field.has-err').forEach(f=>f.classList.remove('has-err')); }
+function showErrors(E){
+  clearErrors();
+  let first = null;
+  for(const k of Object.keys(E)){
+    const f = document.querySelector(`[data-field="${k}"]`);
+    if(!f) continue;
+    f.classList.add('has-err'); f.querySelector('.err').textContent = E[k];
+    if(!first) first = f;
+  }
+  if(first){ first.scrollIntoView({behavior:'smooth',block:'center'}); const i = first.querySelector('input,select'); if(i) i.focus({preventScroll:true}); }
+}
+function validateStep(i){
+  const E = {}; STEPS[i].validate(E, norm(state.data)); return E;
+}
+
+const app = $('#app');
+app.addEventListener('input', e=>{
+  const t = e.target;
+  if(t.dataset.k){
+    state.data[t.dataset.k] = t.value;
+    if(t.dataset.k==='distCoType'){
+      state.data.distCo = ''; save(); render();
+      const nb = document.querySelector('[data-k="distCo"]'); if(nb) nb.focus();
+      return;
+    }
+  }
+  else if(t.dataset.arr){ state.data[t.dataset.arr][+t.dataset.i][t.dataset.f] = t.value; }
+  else return;
+  const f = t.closest('.field'); if(f) f.classList.remove('has-err');
+  if(t.dataset.arr === 'sites' || t.dataset.k === 'capacity') updateSitesHint();
+  save();
+});
+app.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && e.target.tagName==='INPUT'){ e.preventDefault(); const b = document.querySelector('[data-act="next"]'); if(b) b.click(); }
+});
+document.addEventListener('click', e=>{
+  const b = e.target.closest('[data-act]'); if(!b) return;
+  const act = b.dataset.act;
+  if(act==='next'){
+    const E = validateStep(state.step);
+    if(Object.keys(E).length){ showErrors(E); return; }
+    state.step++; state.maxStep = Math.max(state.maxStep, state.step); save(); render(); window.scrollTo({top:0,behavior:'smooth'});
+  } else if(act==='back'){
+    state.step = Math.max(0, state.step-1); save(); render(); window.scrollTo({top:0,behavior:'smooth'});
+  } else if(act==='goto'){
+    const i = +b.dataset.i; if(i<=state.maxStep){ state.step = i; save(); render(); window.scrollTo({top:0,behavior:'smooth'}); }
+  } else if(act==='addsite'){
+    if(state.data.sites.length>=30) return;
+    state.data.sites.push({name:'',kw:''}); save(); $('#sites').innerHTML = sitesHtml(); updateSitesHint();
+    const ins = document.querySelectorAll('#sites .site'); const last = ins[ins.length-1]; if(last) last.querySelector('input').focus();
+  } else if(act==='rmsite'){
+    state.data.sites.splice(+b.dataset.i,1); save(); $('#sites').innerHTML = sitesHtml(); updateSitesHint();
+  } else if(act==='submit'){
+    for(let i=0;i<LAST;i++){
+      const E = validateStep(i);
+      if(Object.keys(E).length){ state.step = i; save(); render(); showErrors(E); return; }
+    }
+    const ds = distOf(state.data.district);
+    $('#confirmText').textContent = `আপনি কি নিশ্চিত যে তথ্যগুলো সঠিক? জমা দিলে "${ds.bn}" জেলার শিটে তথ্য সংরক্ষিত হবে।`;
+    $('#confirmDlg').showModal();
+  } else if(act==='again-same'){
+    const keep = state.data.district; state = {step:1,maxStep:1,data:defaultData(),done:null}; state.data.district = keep; save(); render(); window.scrollTo({top:0});
+  } else if(act==='again-new'){
+    state = {step:0,maxStep:0,data:defaultData(),done:null}; clearDraft(); render(); window.scrollTo({top:0});
+  } else if(act==='reset'){
+    if(confirm('সংরক্ষিত ড্রাফট মুছে নতুন করে শুরু করবেন?')){ state = {step:0,maxStep:0,data:defaultData(),done:null}; clearDraft(); render(); }
+  }
+});
+
+$('#confirmNo').onclick = () => $('#confirmDlg').close();
+$('#confirmYes').onclick = async () => {
+  const dlg = $('#confirmDlg'); const yes = $('#confirmYes');
+  const url = CONFIG.APPS_SCRIPT_URL.trim();
+  const d = norm(state.data), ds = distOf(d.district);
+  const errBox = () => $('#submitErr');
+  if(!url){ dlg.close(); errBox().innerHTML = '<div class="submit-err">Apps Script URL এখনো সেট করা হয়নি। index.html ফাইলের শুরুতে CONFIG.APPS_SCRIPT_URL এ URL বসান। আপনার তথ্য ড্রাফটে সুরক্ষিত আছে।</div>'; return; }
+  const payload = {
+    districtEn: ds.en, districtBn: ds.bn,
+    upazila:d.upazila, office:d.office, ministry:d.ministry, distCoType:d.distCoType, distCo:d.distCo,
+    headName:d.headName, headDesig:d.headDesig, headMobile:d.headMobile,
+    callDate:fmtDate(d.callDate), deadline:fmtDate(d.deadline),
+    capacity:d.capacity,
+    sites:d.sites.filter(s=>s.name||s.kw),
+    bidderCount:d.bidderCount,
+    top3:d.top3.filter(b=>b.name||b.share),
+    company:d.company, startDate:fmtDate(d.startDate), cod:fmtDate(d.cod)
+  };
+  yes.disabled = true; yes.textContent = 'জমা হচ্ছে…'; $('#confirmNo').disabled = true;
+  try{
+    const res = await fetch(url, { method:'POST', body: JSON.stringify(payload) });
+    const j = await res.json();
+    if(!j.ok) throw new Error(j.error || 'অজানা ত্রুটি');
+    dlg.close();
+    state.done = { district: d.district, serial: j.serial };
+    clearDraft(); render();
+  }catch(err){
+    dlg.close();
+    errBox().innerHTML = `<div class="submit-err">জমা দেওয়া যায়নি। ইন্টারনেট সংযোগ ও Apps Script সেটআপ দেখে আবার চেষ্টা করুন। আপনার তথ্য ড্রাফটে সুরক্ষিত আছে।\n(${esc(err.message)})</div>`;
+  }finally{
+    yes.disabled = false; yes.textContent = 'হ্যাঁ, জমা দিন'; $('#confirmNo').disabled = false;
+  }
+};
+
+
+let dp={k:null,y:2026,m:0};
+function renderDp(){
+  const {k,y,m}=dp, sel=state.data[k];
+  const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+  const t=new Date(), ts=`${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())}`;
+  let cells=''; for(let i=0;i<first;i++) cells+='<span></span>';
+  for(let d=1;d<=days;d++){ const ds=`${y}-${pad(m+1)}-${pad(d)}`;
+    cells+=`<button type="button" class="dpd ${ds===sel?'sel':''} ${ds===ts?'today':''}" data-act="dp-pick" data-v="${ds}">${bn(d)}</button>`; }
+  const y0=Math.min(2020,y), y1=Math.max(2040,y); let yo='';
+  for(let i=y0;i<=y1;i++) yo+=`<option value="${i}" ${i===y?'selected':''}>${bn(i)}</option>`;
+  $('#dpCard').innerHTML=`
+    <div class="dphead">
+      <button type="button" class="dpnav" data-act="dp-prev" aria-label="আগের মাস">‹</button>
+      <select id="dpMonth" aria-label="মাস">${MONTHS.map((n,i)=>`<option value="${i}" ${i===m?'selected':''}>${n}</option>`).join('')}</select>
+      <select id="dpYear" aria-label="বছর">${yo}</select>
+      <button type="button" class="dpnav" data-act="dp-next" aria-label="পরের মাস">›</button>
+    </div>
+    <div class="dpgrid">${WD.map(w=>`<div class="dpwd">${w}</div>`).join('')}${cells}</div>
+    <div class="dpfoot"><button type="button" class="btn link" data-act="dp-today">আজ</button><button type="button" class="btn link" data-act="dp-close">বাতিল</button></div>`;
+}
+function openDp(k){
+  const v=state.data[k], n=new Date();
+  let y=n.getFullYear(), m=n.getMonth();
+  if(isDate(v)){ const p=v.split('-').map(Number); y=p[0]; m=p[1]-1; }
+  dp={k,y,m}; renderDp(); $('#dpOverlay').hidden=false;
+}
+function closeDp(){ $('#dpOverlay').hidden=true; }
+function pickDate(v){
+  const k=dp.k; state.data[k]=v; save(); closeDp();
+  const btn=document.querySelector(`.dpbtn[data-k="${k}"]`);
+  if(btn){ btn.classList.add('has'); btn.querySelector('span').textContent=dateLabel(v); const f=btn.closest('.field'); if(f) f.classList.remove('has-err'); btn.focus(); }
+}
+document.addEventListener('click', e=>{
+  const b=e.target.closest('[data-act^="dp-"]');
+  if(e.target.id==='dpOverlay'){ closeDp(); return; }
+  if(!b) return;
+  const a=b.dataset.act;
+  if(a==='dp-open') openDp(b.dataset.k);
+  else if(a==='dp-pick') pickDate(b.dataset.v);
+  else if(a==='dp-close') closeDp();
+  else if(a==='dp-today'){ const t=new Date(); pickDate(`${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())}`); }
+  else if(a==='dp-prev'){ dp.m--; if(dp.m<0){ dp.m=11; dp.y--; } renderDp(); }
+  else if(a==='dp-next'){ dp.m++; if(dp.m>11){ dp.m=0; dp.y++; } renderDp(); }
+});
+$('#dpOverlay').addEventListener('change', e=>{
+  if(e.target.id==='dpMonth') dp.m=+e.target.value;
+  if(e.target.id==='dpYear') dp.y=+e.target.value;
+  renderDp();
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && !$('#dpOverlay').hidden) closeDp(); });
+
+load();
+render();
+</script>
+</body>
+</html>
