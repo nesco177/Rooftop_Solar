@@ -121,8 +121,6 @@ body.hasbar #wrap{padding-top:68px}
 .opt.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
 .opt.primary span{color:rgba(255,255,255,.88)}
 .opt.primary:hover{background:var(--brand-d);border-color:var(--brand-d)}
-.draftbox{background:var(--warn-bg);color:var(--ink);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:.92rem}
-.draftbox .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
 .res{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:.9rem}
 .res .btn{padding:8px 12px;min-height:40px;flex:none}
 .bigid{display:inline-block;font-size:1.6rem;font-weight:700;color:var(--brand-d);background:var(--soft);border-radius:12px;padding:6px 20px;margin:4px 0 10px;letter-spacing:1px}
@@ -183,7 +181,7 @@ const defaultData = () => ({
   company:'', startDate:'', cod:''
 });
 
-const freshState = () => ({ screen:'home', step:0, maxStep:0, data:defaultData(), id:null, serial:null, synced:'', done:null, pick:null, popId:false });
+const freshState = () => ({ screen:'home', step:0, maxStep:0, data:defaultData(), id:null, serial:null, synced:'', done:null, pick:null, pickCtx:null, popId:false });
 let state = freshState();
 
 function fixData(d){
@@ -231,7 +229,6 @@ function save(){
   }catch(e){}
 }
 function clearDraft(){ try{ localStorage.removeItem(CONFIG.STORAGE_KEY); }catch(e){} }
-const hasDraft = () => !!(state.id || state.data.district);
 
 function norm(d){
   const c = JSON.parse(JSON.stringify(d));
@@ -437,9 +434,7 @@ function render(){
 }
 
 function renderHome(){
-  const draft = hasDraft() ? `<div class="draftbox">এই ডিভাইসে একটি অসমাপ্ত কাজ আছে${state.id?` (ID: <b>${esc(state.id)}</b>)`:''}।
-      <div class="row"><button class="btn" data-act="resume-draft" type="button">চালিয়ে যান</button><button class="btn link" data-act="drop-draft" type="button">মুছে ফেলুন</button></div></div>` : '';
-  $('#app').innerHTML = `<section class="card"><h2>স্বাগতম</h2><p class="sub">নিচের যেকোনো একটি বেছে নিন।</p>${draft}
+  $('#app').innerHTML = `<section class="card"><h2>স্বাগতম</h2><p class="sub">নিচের যেকোনো একটি বেছে নিন।</p>
     <button class="opt" data-act="go-login" type="button"><b>ID দিয়ে প্রবেশ করুন</b><span>আগে তথ্য দিয়ে থাকলে ID (মোবাইল নম্বর) দিন — যেখানে শেষ করেছিলেন সেখান থেকে শুরু হবে।</span></button>
     <button class="opt primary" data-act="go-new" type="button"><b>নতুন তথ্য দিন</b><span>নতুন দপ্তরের তথ্য দিতে এখানে চাপুন।</span></button>
   </section>`;
@@ -452,11 +447,13 @@ function renderLogin(){
     <div id="scrErr"></div></section>`;
 }
 function renderPick(){
-  const list = (state.pick || []).map((m,i)=>{
+  const L = state.pick || [];
+  const list = L.map((m,i)=>{
     const d = m.data || {};
     return `<div class="res"><div><b>${esc(d.office||'—')}</b>${m.submitted?'':' <span style="color:var(--warn);font-size:.8rem">(অসমাপ্ত)</span>'}<br>${esc(d.distCoType||'—')}<br>${esc(d.distCo||'—')}</div><button class="btn" data-act="pick" data-i="${i}" type="button">প্রবেশ করুন</button></div>`;
   }).join('');
-  $('#app').innerHTML = `<section class="card"><h2>কোন তথ্যটি খুলবেন?</h2><p class="sub">এই ID (মোবাইল নম্বর) দিয়ে এই জেলায় একাধিক তথ্য পাওয়া গেছে। দপ্তরের নাম দেখে একটি বেছে নিন।</p>${list}</section>`;
+  $('#app').innerHTML = `<section class="card"><h2>${bn(L.length)}টি তথ্য পাওয়া গেছে</h2><p class="sub">এই জেলা ও ID (মোবাইল নম্বর) দিয়ে যে তথ্যগুলো আছে সেগুলো নিচে দেখানো হলো। দপ্তরের নাম দেখে একটি বেছে নিন।</p>${list}
+    <button class="btn ghost" style="width:100%;margin-top:14px" data-act="add-same" type="button">+ এই ID-তে আরেকটি নতুন তথ্য যোগ করুন</button></section>`;
 }
 
 function renderForm(){
@@ -571,10 +568,9 @@ const scrErr = msg => { const el = $('#scrErr'); if(el) el.innerHTML = `<div cla
 const go = screen => { state.screen = screen; save(); render(); window.scrollTo({top:0}); };
 const netMsg = err => `ইন্টারনেট সংযোগ ও Apps Script সেটআপ দেখে আবার চেষ্টা করুন।\n(${err.message})`;
 
-function handleMatches(list){
+function handleMatches(list, ctx){
   if(!list.length){ scrErr('এই জেলা ও ID (মোবাইল নম্বর) দিয়ে কোনো তথ্য পাওয়া যায়নি। জেলা ও নম্বরটি আবার দেখুন।'); return; }
-  if(list.length === 1){ resume(list[0]); return; }
-  state.pick = list; state.screen = 'pick'; render(); window.scrollTo({top:0});
+  state.pick = list; state.pickCtx = ctx; state.screen = 'pick'; render(); window.scrollTo({top:0});
 }
 
 document.addEventListener('click', async e=>{
@@ -626,20 +622,21 @@ document.addEventListener('click', async e=>{
     go('home');
   } else if(act==='go-login'){ go('login');
   } else if(act==='go-new'){
-    if(hasDraft() && !confirm(state.id ? `এই ডিভাইসের অসমাপ্ত কাজ (ID: ${state.id}) সরিয়ে নতুন তথ্য শুরু করবেন? ওই তথ্য শিটে থাকবে, পরে ID দিয়ে আবার ঢুকতে পারবেন।` : 'এই ডিভাইসের অসমাপ্ত ড্রাফট মুছে নতুন তথ্য শুরু করবেন?')) return;
+    if(!state.id && state.data.district && !confirm('আগের অসমাপ্ত তথ্য মুছে যাবে। নতুন তথ্য শুরু করবেন?')) return;
     state = freshState(); state.screen = 'form'; clearDraft(); save(); render(); window.scrollTo({top:0});
-  } else if(act==='resume-draft'){
-    go('form');
-  } else if(act==='drop-draft'){
-    if(confirm(state.id ? `এই ডিভাইস থেকে অসমাপ্ত কাজ সরাবেন? শিটের তথ্য থাকবে, ID: ${state.id} দিয়ে পরে আবার ঢুকতে পারবেন।` : 'অসমাপ্ত ড্রাফট মুছে ফেলবেন?')){ state = freshState(); clearDraft(); render(); }
   } else if(act==='do-login'){
     const dist = $('#loginDist').value, mob = toEn($('#loginId').value).replace(/\D/g,'');
     if(!dist){ scrErr('জেলা নির্বাচন করুন'); return; }
     if(mob.length < 10){ scrErr('সঠিক মোবাইল নম্বর (ID) লিখুন'); return; }
     busy(b,'খোঁজা হচ্ছে…');
-    try{ const j = await api({ action:'load', districtEn:dist, mobile:mob }); handleMatches(j.matches); }
+    try{ const j = await api({ action:'load', districtEn:dist, mobile:mob }); handleMatches(j.matches, { district:dist, mobile:mob }); }
     catch(err){ scrErr(netMsg(err)); }
     finally{ unbusy(b); }
+  } else if(act==='add-same'){
+    const c = state.pickCtx || {};
+    state = freshState(); state.screen = 'form'; state.step = 1; state.maxStep = 1;
+    state.data.district = c.district || ''; state.data.headMobile = c.mobile || '';
+    save(); render(); window.scrollTo({top:0});
   } else if(act==='pick'){
     const m = (state.pick||[])[+b.dataset.i]; if(m) resume(m);
   }
