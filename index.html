@@ -314,7 +314,7 @@ const STEPS = [
 
   { title:'সোলার ক্যাপাসিটি',
     render:()=>`<h2>সোলার সিস্টেমের ক্যাপাসিটি</h2><p class="sub">আহ্বানকৃত দরপত্রের মোট ক্যাপাসিটি এবং স্থাপনা অনুযায়ী ব্রেকডাউন।</p>`
-      + field('capacity','আহ্বানকৃত দরপত্রে সোলার সিস্টেমের ক্যাপাসিটি (কিলোওয়াট)',inp('capacity',{mode:'decimal',ph:'যেমন: 80'}),{req:1})
+      + field('capacity','আহ্বানকৃত দরপত্রে সোলার সিস্টেমের ক্যাপাসিটি (কিলোওয়াট)',inp('capacity',{mode:'decimal',ph:'যেমন: 150'}),{req:1})
       + `<div style="font-weight:600;margin:8px 0 4px;font-size:.95rem">স্থাপনা অনুযায়ী ক্যাপাসিটির ব্রেকডাউন <span class="req" style="color:var(--err)">*</span></div>
          <div class="hint" style="margin-bottom:8px">একটি স্থাপনা হলে একটিই দিন। একাধিক হলে "+ আরেকটি স্থাপনা যোগ করুন" চেপে প্রতিটির নাম ও ক্যাপাসিটি দিন।</div>`
       + `<div id="sites">${sitesHtml()}</div>
@@ -453,10 +453,10 @@ function renderLogin(){
 }
 function renderPick(){
   const list = (state.pick || []).map((m,i)=>{
-    const dd = distOf(m.districtEn) || {bn:m.districtEn};
-    return `<div class="res"><div><b>${dd.bn}</b><br>${esc(m.data.upazila||'')}${m.data.office?`, ${esc(m.data.office)}`:''}${m.submitted?'':' (অসমাপ্ত)'}</div><button class="btn" data-act="pick" data-i="${i}" type="button">প্রবেশ করুন</button></div>`;
+    const d = m.data || {};
+    return `<div class="res"><div><b>${esc(d.office||'—')}</b>${m.submitted?'':' <span style="color:var(--warn);font-size:.8rem">(অসমাপ্ত)</span>'}<br>${esc(d.distCoType||'—')}<br>${esc(d.distCo||'—')}</div><button class="btn" data-act="pick" data-i="${i}" type="button">প্রবেশ করুন</button></div>`;
   }).join('');
-  $('#app').innerHTML = `<section class="card"><h2>কোন তথ্যটি খুলবেন?</h2><p class="sub">এই ID (মোবাইল নম্বর) দিয়ে এই জেলায় একাধিক তথ্য পাওয়া গেছে। একটি বেছে নিন।</p>${list}</section>`;
+  $('#app').innerHTML = `<section class="card"><h2>কোন তথ্যটি খুলবেন?</h2><p class="sub">এই ID (মোবাইল নম্বর) দিয়ে এই জেলায় একাধিক তথ্য পাওয়া গেছে। দপ্তরের নাম দেখে একটি বেছে নিন।</p>${list}</section>`;
 }
 
 function renderForm(){
