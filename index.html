@@ -103,16 +103,39 @@ dialog{box-shadow:0 10px 40px rgba(0,0,0,.28)}
 dialog h3{margin:0 0 6px}
 dialog p{margin:0 0 16px;color:var(--muted)}
 dialog .acts{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+#idbar{position:fixed;top:0;left:0;right:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--line)}
+#idbar[hidden]{display:none}
+#idbar .barin{max-width:720px;margin:0 auto;padding:8px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:52px}
+body.hasbar #wrap{padding-top:68px}
+.homebtn{pointer-events:auto;display:inline-flex;align-items:center;gap:7px;font:inherit;font-weight:600;font-size:.9rem;background:var(--card);border:1.5px solid var(--line);color:var(--brand-d);border-radius:999px;padding:5px 15px 5px 11px;min-height:36px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.homebtn:hover{background:var(--soft);border-color:var(--brand)}
+.homebtn svg{flex:none}
+.idbadge{margin-left:auto;pointer-events:auto;display:inline-block;background:var(--soft);border:1.5px solid var(--brand);color:var(--brand-d);border-radius:10px;padding:3px 12px;font-size:.88rem;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.idbadge b{font-size:1.02rem;letter-spacing:.5px}
+.idbadge.pop{animation:pop .6s ease}
+@keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+.opt{display:block;width:100%;text-align:left;font:inherit;background:var(--card);border:1.5px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer;color:var(--ink)}
+.opt:hover{border-color:var(--brand);background:var(--soft)}
+.opt b{display:block;font-size:1.05rem;margin-bottom:2px}
+.opt span{color:var(--muted);font-size:.88rem}
+.opt.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.opt.primary span{color:rgba(255,255,255,.88)}
+.opt.primary:hover{background:var(--brand-d);border-color:var(--brand-d)}
+.draftbox{background:var(--warn-bg);color:var(--ink);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:.92rem}
+.draftbox .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px}
+.res{display:flex;justify-content:space-between;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:.9rem}
+.res .btn{padding:8px 12px;min-height:40px;flex:none}
+.bigid{display:inline-block;font-size:1.6rem;font-weight:700;color:var(--brand-d);background:var(--soft);border-radius:12px;padding:6px 20px;margin:4px 0 10px;letter-spacing:1px}
 </style>
 </head>
 <body>
 <div id="wrap">
+  <div id="idbar"></div>
   <header class="top">
     <h1>ওপেক্স মডেলে রুফটপ সোলার স্থাপনের অগ্রগতি</h1>
     <p>তথ্য সংগ্রহ ফর্ম</p>
   </header>
   <div id="app"></div>
-  <div style="text-align:center;margin-top:14px"><button class="btn link" data-act="reset">ড্রাফট মুছে নতুন করে শুরু করুন</button></div>
 </div>
 
 <div class="dpov" id="dpOverlay" hidden><div class="dpcard" id="dpCard"></div></div>
@@ -160,34 +183,55 @@ const defaultData = () => ({
   company:'', startDate:'', cod:''
 });
 
-let state = { step:0, maxStep:0, data:defaultData(), done:null };
+const freshState = () => ({ screen:'home', step:0, maxStep:0, data:defaultData(), id:null, serial:null, synced:'', done:null, pick:null, popId:false });
+let state = freshState();
+
+function fixData(d){
+  const data = Object.assign(defaultData(), d || {});
+  if (!data.distCoType){
+    const t = String(data.distCo||'');
+    if (/pbs|পিবিএস/i.test(t)) data.distCoType = 'PBS';
+    else if (/nesco|নেসকো/i.test(t)) data.distCoType = 'NESCO';
+    if (['নেসকো','পিবিএস'].includes(t.trim())) data.distCo = '';
+  }
+  if (!Array.isArray(data.sites) || !data.sites.length) data.sites = [{name:'',kw:''}];
+  if (!Array.isArray(data.top3)) data.top3 = [];
+  while (data.top3.length < 3) data.top3.push({name:'',share:''});
+  return data;
+}
 
 function load(){
   try{
     const s = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEY));
     if (s && s.data){
-      state.step = Math.min(s.step || 0, 8);
-      state.maxStep = Math.min(s.maxStep || 0, 8);
-      state.data = Object.assign(defaultData(), s.data);
-      if (!state.data.distCoType){
-        const t = String(state.data.distCo||'');
-        if (/pbs|পিবিএস/i.test(t)) state.data.distCoType = 'PBS';
-        else if (/nesco|নেসকো/i.test(t)) state.data.distCoType = 'NESCO';
-        if (['নেসকো','পিবিএস'].includes(t.trim())) state.data.distCo = '';
-      }
-      if (!Array.isArray(state.data.sites) || !state.data.sites.length) state.data.sites = [{name:'',kw:''}];
-      while (state.data.top3.length < 3) state.data.top3.push({name:'',share:''});
+      state.step = Math.min(s.step || 0, LAST);
+      state.maxStep = Math.min(s.maxStep || 0, LAST);
+      state.data = fixData(s.data);
+      state.id = s.id || null;
+      state.serial = s.serial || null;
+      state.synced = s.synced || '';
+      state.screen = s.screen === 'form' ? 'form' : 'home';
     }
   }catch(e){}
 }
 let flashT;
+function flash(t){
+  const el = $('#saved'); if (!el) return;
+  el.textContent = t; clearTimeout(flashT);
+  flashT = setTimeout(()=>{ const e2=$('#saved'); if(e2) e2.textContent=''; }, 1800);
+}
 function save(){
   try{
-    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify({step:state.step, maxStep:state.maxStep, data:state.data, savedAt:Date.now()}));
-    const el = $('#saved'); if (el){ el.textContent = '✓ ড্রাফট সংরক্ষিত'; clearTimeout(flashT); flashT = setTimeout(()=>{ const e2=$('#saved'); if(e2) e2.textContent=''; }, 1200); }
+    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify({
+      screen: state.screen === 'form' ? 'form' : 'home',
+      step:state.step, maxStep:state.maxStep, data:state.data,
+      id:state.id, serial:state.serial, synced:state.synced, savedAt:Date.now()
+    }));
+    flash('✓ ড্রাফট সংরক্ষিত');
   }catch(e){}
 }
 function clearDraft(){ try{ localStorage.removeItem(CONFIG.STORAGE_KEY); }catch(e){} }
+const hasDraft = () => !!(state.id || state.data.district);
 
 function norm(d){
   const c = JSON.parse(JSON.stringify(d));
@@ -221,7 +265,7 @@ const STEPS = [
   { title:'জেলা নির্বাচন',
     render:()=>`<h2>জেলা নির্বাচন</h2><p class="sub">যে জেলার তথ্য দিচ্ছেন সেটি বেছে নিন। তথ্য ওই জেলার শিটে জমা হবে।</p>`
       + field('district','জেলা',
-        `<select data-k="district"><option value="">— জেলা নির্বাচন করুন —</option>${DISTRICTS.map((x,i)=>`<option value="${x.en}" ${state.data.district===x.en?'selected':''}>${bn(i+1)}. ${x.bn} (${x.en})</option>`).join('')}</select>`,{req:1}),
+        `<select data-k="district" ${state.id?'disabled':''}><option value="">— জেলা নির্বাচন করুন —</option>${DISTRICTS.map((x,i)=>`<option value="${x.en}" ${state.data.district===x.en?'selected':''}>${bn(i+1)}. ${x.bn} (${x.en})</option>`).join('')}</select>`,{req:1, hint: state.id ? 'মোবাইল নম্বর (ID) সংরক্ষণের পর জেলা বদলানো যায় না। জেলা ভুল হলে হোম পেজ থেকে "নতুন তথ্য দিন" দিয়ে আবার শুরু করুন।' : ''}),
     validate:(E,d)=>{ if(!d.district) E.district='একটি জেলা নির্বাচন করুন'; } },
 
   { title:'দপ্তরের তথ্য',
@@ -248,9 +292,10 @@ const STEPS = [
 
   { title:'দপ্তর প্রধানের তথ্য',
     render:()=>`<h2>দরপত্র আহ্বানের দায়িত্বপ্রাপ্ত দপ্তর প্রধান</h2><p class="sub">নাম, পদবি ও মোবাইল নম্বর।</p>`
+      + (state.id ? '' : '<div class="ctx">এখানে যে মোবাইল নম্বর দেবেন সেটিই আপনার <b>ID</b> হবে। এই নম্বর দিয়ে পরে ঢুকে তথ্য দিতে বা সংশোধন করতে পারবেন।</div>')
       + field('headName','নাম',inp('headName'),{req:1})
       + field('headDesig','পদবি',inp('headDesig'),{req:1})
-      + field('headMobile','মোবাইল নম্বর',inp('headMobile',{mode:'tel',ph:'01XXXXXXXXX'}),{req:1}),
+      + field('headMobile','মোবাইল নম্বর',inp('headMobile',{mode:'tel'}),{req:1, hint:'এই নম্বরই আপনার ID হবে'}),
     validate:(E,d)=>{
       req(E,d,'headName','নাম লিখুন'); req(E,d,'headDesig','পদবি লিখুন');
       if(!d.headMobile) E.headMobile='মোবাইল নম্বর লিখুন';
@@ -269,7 +314,7 @@ const STEPS = [
 
   { title:'সোলার ক্যাপাসিটি',
     render:()=>`<h2>সোলার সিস্টেমের ক্যাপাসিটি</h2><p class="sub">আহ্বানকৃত দরপত্রের মোট ক্যাপাসিটি এবং স্থাপনা অনুযায়ী ব্রেকডাউন।</p>`
-      + field('capacity','আহ্বানকৃত দরপত্রে সোলার সিস্টেমের ক্যাপাসিটি (কিলোওয়াট)',inp('capacity',{mode:'decimal',ph:'যেমন: 150'}),{req:1})
+      + field('capacity','আহ্বানকৃত দরপত্রে সোলার সিস্টেমের ক্যাপাসিটি (কিলোওয়াট)',inp('capacity',{mode:'decimal',ph:'যেমন: 80'}),{req:1})
       + `<div style="font-weight:600;margin:8px 0 4px;font-size:.95rem">স্থাপনা অনুযায়ী ক্যাপাসিটির ব্রেকডাউন <span class="req" style="color:var(--err)">*</span></div>
          <div class="hint" style="margin-bottom:8px">একটি স্থাপনা হলে একটিই দিন। একাধিক হলে "+ আরেকটি স্থাপনা যোগ করুন" চেপে প্রতিটির নাম ও ক্যাপাসিটি দিন।</div>`
       + `<div id="sites">${sitesHtml()}</div>
@@ -370,9 +415,52 @@ function reviewHtml(){
     <div id="submitErr"></div>`;
 }
 
+const HOME_ICON='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg>';
+function renderIdbar(){
+  const el = $('#idbar');
+  const home = !state.done && state.screen !== 'home';
+  const showId = state.id && (state.screen === 'form' || state.done);
+  const inner = (home ? `<button type="button" class="homebtn" data-act="go-home" aria-label="হোম পেজে ফিরুন">${HOME_ICON}<span>হোম</span></button>` : '')
+    + (showId ? `<span class="idbadge ${state.popId?'pop':''}">আপনার ID: <b>${esc(state.id)}</b></span>` : '');
+  el.innerHTML = inner ? `<div class="barin">${inner}</div>` : '';
+  el.hidden = !inner;
+  document.body.classList.toggle('hasbar', !!inner);
+  state.popId = false;
+}
 function render(){
+  renderIdbar();
+  if (state.done) return renderDone();
+  if (state.screen === 'home') return renderHome();
+  if (state.screen === 'login') return renderLogin();
+  if (state.screen === 'pick') return renderPick();
+  renderForm();
+}
+
+function renderHome(){
+  const draft = hasDraft() ? `<div class="draftbox">এই ডিভাইসে একটি অসমাপ্ত কাজ আছে${state.id?` (ID: <b>${esc(state.id)}</b>)`:''}।
+      <div class="row"><button class="btn" data-act="resume-draft" type="button">চালিয়ে যান</button><button class="btn link" data-act="drop-draft" type="button">মুছে ফেলুন</button></div></div>` : '';
+  $('#app').innerHTML = `<section class="card"><h2>স্বাগতম</h2><p class="sub">নিচের যেকোনো একটি বেছে নিন।</p>${draft}
+    <button class="opt" data-act="go-login" type="button"><b>ID দিয়ে প্রবেশ করুন</b><span>আগে তথ্য দিয়ে থাকলে ID (মোবাইল নম্বর) দিন — যেখানে শেষ করেছিলেন সেখান থেকে শুরু হবে।</span></button>
+    <button class="opt primary" data-act="go-new" type="button"><b>নতুন তথ্য দিন</b><span>নতুন দপ্তরের তথ্য দিতে এখানে চাপুন।</span></button>
+  </section>`;
+}
+function renderLogin(){
+  $('#app').innerHTML = `<section class="card"><h2>ID দিয়ে প্রবেশ</h2><p class="sub">জেলা নির্বাচন করুন এবং দপ্তর প্রধানের যে মোবাইল নম্বর দিয়ে তথ্য দিয়েছিলেন সেটি লিখুন। ওই নম্বরই আপনার ID।</p>
+    <div class="field"><label>জেলা <span class="req">*</span></label><select id="loginDist"><option value="">— জেলা নির্বাচন করুন —</option>${DISTRICTS.map((x,i)=>`<option value="${x.en}">${bn(i+1)}. ${x.bn} (${x.en})</option>`).join('')}</select></div>
+    <div class="field"><label>আপনার ID (মোবাইল নম্বর) <span class="req">*</span></label><input id="loginId" inputmode="tel" autocomplete="off"></div>
+    <button class="btn" style="width:100%" data-act="do-login" data-enter="1" type="button">প্রবেশ করুন</button>
+    <div id="scrErr"></div></section>`;
+}
+function renderPick(){
+  const list = (state.pick || []).map((m,i)=>{
+    const dd = distOf(m.districtEn) || {bn:m.districtEn};
+    return `<div class="res"><div><b>${dd.bn}</b><br>${esc(m.data.upazila||'')}${m.data.office?`, ${esc(m.data.office)}`:''}${m.submitted?'':' (অসমাপ্ত)'}</div><button class="btn" data-act="pick" data-i="${i}" type="button">প্রবেশ করুন</button></div>`;
+  }).join('');
+  $('#app').innerHTML = `<section class="card"><h2>কোন তথ্যটি খুলবেন?</h2><p class="sub">এই ID (মোবাইল নম্বর) দিয়ে এই জেলায় একাধিক তথ্য পাওয়া গেছে। একটি বেছে নিন।</p>${list}</section>`;
+}
+
+function renderForm(){
   const app = $('#app');
-  if(state.done){ return renderDone(); }
   const n = STEPS.length, s = state.step;
   app.innerHTML = `
     <div class="progress"><div class="bar" style="width:${(s+1)/n*100}%"></div></div>
@@ -382,14 +470,17 @@ function render(){
     <div class="nav">
       ${s>0?`<button class="btn ghost" data-act="back" type="button">‹ পিছনে</button>`:`<span></span>`}
       ${s<LAST?`<button class="btn" data-act="next" type="button">সংরক্ষণ করে পরবর্তী ›</button>`:`<button class="btn" data-act="submit" type="button">জমা দিন</button>`}
-    </div>`;
+    </div>
+    <div id="navErr"></div>`;
   if(STEPS[s].after) STEPS[s].after();
 }
 function renderDone(){
   const ds = distOf(state.done.district) || {bn:''};
   $('#app').innerHTML = `<section class="card done"><div class="ok">✓</div>
     <h2>তথ্য সফলভাবে জমা হয়েছে</h2>
-    <p class="sub">${ds.bn} জেলার শিটে সংরক্ষিত হয়েছে${state.done.serial?` (ক্রমিক নং ${bn(state.done.serial)})`:''}।</p>
+    <p class="sub">${ds.bn} জেলার শিটে সংরক্ষিত হয়েছে। আপনার ID:</p>
+    <div class="bigid">${esc(state.done.id)}</div>
+    <p class="sub">এই ID (মোবাইল নম্বর) দিয়ে পরে ঢুকে তথ্য সংশোধন করতে পারবেন।</p>
     <div class="actions">
       <button class="btn" data-act="again-same" type="button">একই জেলায় আরেকটি এন্ট্রি করুন</button>
       <button class="btn ghost" data-act="again-new" type="button">অন্য জেলার জন্য নতুন এন্ট্রি</button>
@@ -431,19 +522,87 @@ app.addEventListener('input', e=>{
   save();
 });
 app.addEventListener('keydown', e=>{
-  if(e.key==='Enter' && e.target.tagName==='INPUT'){ e.preventDefault(); const b = document.querySelector('[data-act="next"]'); if(b) b.click(); }
+  if(e.key==='Enter' && e.target.tagName==='INPUT'){ e.preventDefault(); const b = document.querySelector('[data-act="next"],[data-enter]'); if(b) b.click(); }
 });
-document.addEventListener('click', e=>{
+function isDirty(){ return JSON.stringify(norm(state.data)) !== state.synced; }
+
+async function api(payload){
+  const url = CONFIG.APPS_SCRIPT_URL.trim();
+  if(!url) throw new Error('Apps Script URL সেট করা হয়নি');
+  const ctl = new AbortController();
+  const t = setTimeout(()=>ctl.abort(), 45000);
+  try{
+    const res = await fetch(url, { method:'POST', body: JSON.stringify(payload), signal: ctl.signal });
+    const j = await res.json();
+    if(!j.ok) throw new Error(j.error || 'অজানা ত্রুটি');
+    return j;
+  }finally{ clearTimeout(t); }
+}
+
+let chain = Promise.resolve();
+function syncNow(submitted, reached){
+  const run = async () => {
+    const d = norm(state.data), snap = JSON.stringify(d);
+    const j = await api({ action:'save', districtEn:d.district, serial:state.serial, step:reached, submitted:!!submitted, data:d });
+    if(!state.id) state.popId = true;
+    state.serial = j.serial; state.id = j.id; state.synced = snap;
+    save();
+    return j;
+  };
+  const p = chain.then(run);
+  chain = p.catch(()=>{});
+  return p;
+}
+function softSync(){
+  if(state.id && isDirty() && !Object.keys(validateStep(state.step)).length) syncNow(false, state.maxStep).catch(()=>{});
+}
+
+function resume(m){
+  const data = fixData(m.data);
+  const st = Math.min(Number(m.step) || 0, LAST);
+  state = freshState();
+  Object.assign(state, { screen:'form', step:st, maxStep:st, data, id:m.id, serial:m.serial, synced:JSON.stringify(norm(data)) });
+  save(); render(); window.scrollTo({top:0});
+}
+
+const busy = (b,t) => { b.dataset.t = b.textContent; b.disabled = true; b.textContent = t; };
+const unbusy = b => { if(b && b.isConnected){ b.disabled = false; b.textContent = b.dataset.t || b.textContent; } };
+const scrErr = msg => { const el = $('#scrErr'); if(el) el.innerHTML = `<div class="submit-err">${esc(msg)}</div>`; };
+const go = screen => { state.screen = screen; save(); render(); window.scrollTo({top:0}); };
+const netMsg = err => `ইন্টারনেট সংযোগ ও Apps Script সেটআপ দেখে আবার চেষ্টা করুন।\n(${err.message})`;
+
+function handleMatches(list){
+  if(!list.length){ scrErr('এই জেলা ও ID (মোবাইল নম্বর) দিয়ে কোনো তথ্য পাওয়া যায়নি। জেলা ও নম্বরটি আবার দেখুন।'); return; }
+  if(list.length === 1){ resume(list[0]); return; }
+  state.pick = list; state.screen = 'pick'; render(); window.scrollTo({top:0});
+}
+
+document.addEventListener('click', async e=>{
   const b = e.target.closest('[data-act]'); if(!b) return;
   const act = b.dataset.act;
+  if(act.indexOf('dp-') === 0) return;
+
   if(act==='next'){
     const E = validateStep(state.step);
     if(Object.keys(E).length){ showErrors(E); return; }
-    state.step++; state.maxStep = Math.max(state.maxStep, state.step); save(); render(); window.scrollTo({top:0,behavior:'smooth'});
+    const target = state.step + 1, reached = Math.max(state.maxStep, target);
+    const needSync = (state.step >= 3 || state.id) && (!state.id || isDirty() || reached > state.maxStep);
+    let synced = false;
+    if(needSync){
+      busy(b,'সংরক্ষণ হচ্ছে…');
+      try{ await syncNow(false, reached); synced = true; }
+      catch(err){
+        unbusy(b);
+        const box = $('#navErr'); if(box) box.innerHTML = `<div class="submit-err">শিটে সংরক্ষণ করা যায়নি। ${esc(netMsg(err))}\nআপনার তথ্য এই ডিভাইসে সুরক্ষিত আছে।</div>`;
+        return;
+      }
+    }
+    state.step = target; state.maxStep = reached; save(); render(); window.scrollTo({top:0,behavior:'smooth'});
+    if(synced) flash('✓ শিটে সংরক্ষিত');
   } else if(act==='back'){
-    state.step = Math.max(0, state.step-1); save(); render(); window.scrollTo({top:0,behavior:'smooth'});
+    softSync(); state.step = Math.max(0, state.step-1); save(); render(); window.scrollTo({top:0,behavior:'smooth'});
   } else if(act==='goto'){
-    const i = +b.dataset.i; if(i<=state.maxStep){ state.step = i; save(); render(); window.scrollTo({top:0,behavior:'smooth'}); }
+    const i = +b.dataset.i; if(i<=state.maxStep){ softSync(); state.step = i; save(); render(); window.scrollTo({top:0,behavior:'smooth'}); }
   } else if(act==='addsite'){
     if(state.data.sites.length>=30) return;
     state.data.sites.push({name:'',kw:''}); save(); $('#sites').innerHTML = sitesHtml(); updateSitesHint();
@@ -456,48 +615,52 @@ document.addEventListener('click', e=>{
       if(Object.keys(E).length){ state.step = i; save(); render(); showErrors(E); return; }
     }
     const ds = distOf(state.data.district);
-    $('#confirmText').textContent = `আপনি কি নিশ্চিত যে তথ্যগুলো সঠিক? জমা দিলে "${ds.bn}" জেলার শিটে তথ্য সংরক্ষিত হবে।`;
+    $('#confirmText').textContent = `আপনি কি নিশ্চিত যে তথ্যগুলো সঠিক? জমা দিলে "${ds.bn}" জেলার শিটে তথ্য চূড়ান্তভাবে সংরক্ষিত হবে।`;
     $('#confirmDlg').showModal();
   } else if(act==='again-same'){
-    const keep = state.data.district; state = {step:1,maxStep:1,data:defaultData(),done:null}; state.data.district = keep; save(); render(); window.scrollTo({top:0});
+    const keep = state.data.district; state = freshState(); state.screen = 'form'; state.step = 1; state.maxStep = 1; state.data.district = keep; save(); render(); window.scrollTo({top:0});
   } else if(act==='again-new'){
-    state = {step:0,maxStep:0,data:defaultData(),done:null}; clearDraft(); render(); window.scrollTo({top:0});
-  } else if(act==='reset'){
-    if(confirm('সংরক্ষিত ড্রাফট মুছে নতুন করে শুরু করবেন?')){ state = {step:0,maxStep:0,data:defaultData(),done:null}; clearDraft(); render(); }
+    state = freshState(); state.screen = 'form'; save(); render(); window.scrollTo({top:0});
+  } else if(act==='go-home'){
+    if(state.screen==='form' && !state.done) softSync();
+    go('home');
+  } else if(act==='go-login'){ go('login');
+  } else if(act==='go-new'){
+    if(hasDraft() && !confirm(state.id ? `এই ডিভাইসের অসমাপ্ত কাজ (ID: ${state.id}) সরিয়ে নতুন তথ্য শুরু করবেন? ওই তথ্য শিটে থাকবে, পরে ID দিয়ে আবার ঢুকতে পারবেন।` : 'এই ডিভাইসের অসমাপ্ত ড্রাফট মুছে নতুন তথ্য শুরু করবেন?')) return;
+    state = freshState(); state.screen = 'form'; clearDraft(); save(); render(); window.scrollTo({top:0});
+  } else if(act==='resume-draft'){
+    go('form');
+  } else if(act==='drop-draft'){
+    if(confirm(state.id ? `এই ডিভাইস থেকে অসমাপ্ত কাজ সরাবেন? শিটের তথ্য থাকবে, ID: ${state.id} দিয়ে পরে আবার ঢুকতে পারবেন।` : 'অসমাপ্ত ড্রাফট মুছে ফেলবেন?')){ state = freshState(); clearDraft(); render(); }
+  } else if(act==='do-login'){
+    const dist = $('#loginDist').value, mob = toEn($('#loginId').value).replace(/\D/g,'');
+    if(!dist){ scrErr('জেলা নির্বাচন করুন'); return; }
+    if(mob.length < 10){ scrErr('সঠিক মোবাইল নম্বর (ID) লিখুন'); return; }
+    busy(b,'খোঁজা হচ্ছে…');
+    try{ const j = await api({ action:'load', districtEn:dist, mobile:mob }); handleMatches(j.matches); }
+    catch(err){ scrErr(netMsg(err)); }
+    finally{ unbusy(b); }
+  } else if(act==='pick'){
+    const m = (state.pick||[])[+b.dataset.i]; if(m) resume(m);
   }
 });
 
 $('#confirmNo').onclick = () => $('#confirmDlg').close();
 $('#confirmYes').onclick = async () => {
-  const dlg = $('#confirmDlg'); const yes = $('#confirmYes');
-  const url = CONFIG.APPS_SCRIPT_URL.trim();
-  const d = norm(state.data), ds = distOf(d.district);
+  const dlg = $('#confirmDlg'); const yes = $('#confirmYes'); const no = $('#confirmNo');
   const errBox = () => $('#submitErr');
-  if(!url){ dlg.close(); errBox().innerHTML = '<div class="submit-err">Apps Script URL এখনো সেট করা হয়নি। index.html ফাইলের শুরুতে CONFIG.APPS_SCRIPT_URL এ URL বসান। আপনার তথ্য ড্রাফটে সুরক্ষিত আছে।</div>'; return; }
-  const payload = {
-    districtEn: ds.en, districtBn: ds.bn,
-    upazila:d.upazila, office:d.office, ministry:d.ministry, distCoType:d.distCoType, distCo:d.distCo,
-    headName:d.headName, headDesig:d.headDesig, headMobile:d.headMobile,
-    callDate:fmtDate(d.callDate), deadline:fmtDate(d.deadline),
-    capacity:d.capacity,
-    sites:d.sites.filter(s=>s.name||s.kw),
-    bidderCount:d.bidderCount,
-    top3:d.top3.filter(b=>b.name||b.share),
-    company:d.company, startDate:fmtDate(d.startDate), cod:fmtDate(d.cod)
-  };
-  yes.disabled = true; yes.textContent = 'জমা হচ্ছে…'; $('#confirmNo').disabled = true;
+  yes.disabled = true; yes.textContent = 'জমা হচ্ছে…'; no.disabled = true;
   try{
-    const res = await fetch(url, { method:'POST', body: JSON.stringify(payload) });
-    const j = await res.json();
-    if(!j.ok) throw new Error(j.error || 'অজানা ত্রুটি');
+    const d = norm(state.data);
+    await syncNow(true, LAST);
     dlg.close();
-    state.done = { district: d.district, serial: j.serial };
+    state.maxStep = LAST; state.done = { district:d.district, id:state.id };
     clearDraft(); render();
   }catch(err){
     dlg.close();
-    errBox().innerHTML = `<div class="submit-err">জমা দেওয়া যায়নি। ইন্টারনেট সংযোগ ও Apps Script সেটআপ দেখে আবার চেষ্টা করুন। আপনার তথ্য ড্রাফটে সুরক্ষিত আছে।\n(${esc(err.message)})</div>`;
+    const box = errBox(); if(box) box.innerHTML = `<div class="submit-err">জমা দেওয়া যায়নি। ${esc(netMsg(err))}\nআপনার তথ্য এই ডিভাইসে সুরক্ষিত আছে।</div>`;
   }finally{
-    yes.disabled = false; yes.textContent = 'হ্যাঁ, জমা দিন'; $('#confirmNo').disabled = false;
+    yes.disabled = false; yes.textContent = 'হ্যাঁ, জমা দিন'; no.disabled = false;
   }
 };
 
