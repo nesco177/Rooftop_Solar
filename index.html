@@ -250,6 +250,7 @@ const inp = (k, o = {}) => `<input data-k="${k}" type="${o.type||'text'}" value=
 const inpA = (arr, i, f, o = {}) => `<input data-arr="${arr}" data-i="${i}" data-f="${f}" type="text" value="${esc(state.data[arr][i][f])}" ${o.mode?`inputmode="${o.mode}"`:''} ${o.ph?`placeholder="${esc(o.ph)}"`:''} autocomplete="off">`;
 
 const req = (E, d, k, msg) => { if (!String(d[k]).trim()) E[k] = msg; };
+const noBidder = d => d.bidderCount === '0';
 const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v);
 const MONTHS=['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
 const WD=['র','সো','ম','বু','বৃ','শু','শ'];
@@ -330,36 +331,36 @@ const STEPS = [
 
   { title:'বিনিয়োগকারী',
     render:()=>`<h2>বিনিয়োগকারীর তথ্য</h2><p class="sub">দরপত্র জমাদানকারী সংখ্যা এবং মূল্যায়নে নির্বাচিত প্রথম তিনজনের ছাদ ভাড়া বাবদ অফার করা % শেয়ার।</p>`
-      + field('bidderCount','কতজন বিনিয়োগকারি দরপত্র জমা প্রদান করেছেন',inp('bidderCount',{mode:'numeric',ph:'যেমন: ৫'}),{req:1})
-      + `<div style="font-weight:600;margin:8px 0 4px;font-size:.95rem">নির্বাচিত প্রথম তিনজন — ছাদ ভাড়া বাবদ কে কত % শেয়ার অফার করেছেন</div>
-         <div class="hint" style="margin-bottom:8px">বিনিয়োগকারী ৩ জনের কম হলে যতজন আছেন ততজনের তথ্য দিলেই হবে।</div>`
+      + field('bidderCount','কতজন বিনিয়োগকারি দরপত্র জমা প্রদান করেছেন',inp('bidderCount',{mode:'numeric',ph:'যেমন: ৫'}),{req:1, hint:'কেউ দরপত্র জমা না দিলে ০ লিখুন'})
+      + `<div style="font-weight:600;margin:8px 0 4px;font-size:.95rem">নির্বাচিত প্রথম তিনজন — ছাদ ভাড়া বাবদ কে কত % শেয়ার অফার করেছেন (ঐচ্ছিক)</div>
+         <div class="hint" style="margin-bottom:8px">এই ঘরগুলো পূরণ করা বাধ্যতামূলক নয়। তথ্য না থাকলে খালি রাখুন।</div>`
       + state.data.top3.map((b,i)=>`<div class="bidder"><div class="tag">${['প্রথম','দ্বিতীয়','তৃতীয়'][i]} বিনিয়োগকারী</div><div class="row2">`
-          + field(`top3.${i}.name`,'প্রতিষ্ঠানের নাম',inpA('top3',i,'name'),{req:1})
-          + field(`top3.${i}.share`,'অফার (%)',inpA('top3',i,'share',{mode:'decimal',ph:'যেমন: ১২.৫'}),{req:1})
+          + field(`top3.${i}.name`,'প্রতিষ্ঠানের নাম',inpA('top3',i,'name'))
+          + field(`top3.${i}.share`,'অফার (%)',inpA('top3',i,'share',{mode:'decimal',ph:'যেমন: ১২.৫'}))
           + `</div></div>`).join(''),
     validate:(E,d)=>{
       if(d.bidderCount==='') E.bidderCount='সংখ্যা লিখুন';
-      else if(!/^\d+$/.test(d.bidderCount) || Number(d.bidderCount)<1) E.bidderCount='১ বা তার বেশি পূর্ণ সংখ্যা দিন';
-      const need = /^\d+$/.test(d.bidderCount) ? Math.min(3, Number(d.bidderCount)) : 3;
+      else if(!/^\d+$/.test(d.bidderCount)) E.bidderCount='০ বা তার বেশি পূর্ণ সংখ্যা দিন';
       d.top3.forEach((b,i)=>{
-        if(i < need || b.name || b.share){
-          if(!b.name) E[`top3.${i}.name`]='প্রতিষ্ঠানের নাম দিন';
-          if(b.share==='') E[`top3.${i}.share`]='% শেয়ার দিন';
-          else if(!(num(b.share)>=0 && num(b.share)<=100)) E[`top3.${i}.share`]='০ থেকে ১০০ এর মধ্যে দিন';
-        }
+        if(b.share!=='' && !(num(b.share)>=0 && num(b.share)<=100)) E[`top3.${i}.share`]='০ থেকে ১০০ এর মধ্যে দিন';
       });
     } },
 
   { title:'চুক্তি ও কাজ',
-    render:()=>`<h2>চুক্তি, কাজ শুরু ও COD</h2><p class="sub">সব ঘর পূরণ করা আবশ্যক।</p>`
-      + field('company','চুক্তি সম্পাদনের জন্য সম্মত বিনিয়োগকারী প্রতিষ্ঠানের নাম',inp('company'),{req:1})
-      + field('startDate','সোলার সিস্টেম স্থাপনের জন্য কাজ শুরুর তারিখ',dateInp('startDate'),{req:1})
-      + field('cod','কমার্শিয়াল অপারেশন ডেট (COD) এর তারিখ',dateInp('cod'),{req:1}),
+    render:()=>{
+      const r = noBidder(norm(state.data)) ? 0 : 1;
+      return `<h2>চুক্তি, কাজ শুরু ও COD</h2><p class="sub">${r ? 'সব ঘর পূরণ করা আবশ্যক।' : 'কোনো বিনিয়োগকারী দরপত্র জমা দেননি, তাই এই ঘরগুলো খালি রেখে জমা দিতে পারবেন।'}</p>`
+      + field('company','চুক্তি সম্পাদনের জন্য সম্মত বিনিয়োগকারী প্রতিষ্ঠানের নাম',inp('company'),{req:r})
+      + field('startDate','সোলার সিস্টেম স্থাপনের জন্য কাজ শুরুর তারিখ',dateInp('startDate'),{req:r})
+      + field('cod','কমার্শিয়াল অপারেশন ডেট (COD) এর তারিখ',dateInp('cod'),{req:r});
+    },
     validate:(E,d)=>{
-      req(E,d,'company','প্রতিষ্ঠানের নাম লিখুন');
-      if(!d.startDate) E.startDate='তারিখ নির্বাচন করুন';
-      if(!d.cod) E.cod='তারিখ নির্বাচন করুন';
-      else if(d.startDate && d.cod < d.startDate) E.cod='COD তারিখ কাজ শুরুর তারিখের আগে হতে পারে না';
+      if(!noBidder(d)){
+        req(E,d,'company','প্রতিষ্ঠানের নাম লিখুন');
+        if(!d.startDate) E.startDate='তারিখ নির্বাচন করুন';
+        if(!d.cod) E.cod='তারিখ নির্বাচন করুন';
+      }
+      if(d.cod && d.startDate && d.cod < d.startDate) E.cod='COD তারিখ কাজ শুরুর তারিখের আগে হতে পারে না';
     } },
 
   { title:'যাচাই ও জমা',
@@ -394,7 +395,7 @@ function reviewData(){
   const v = x => x ? esc(x) : '<span class="empty">—</span>';
   const head = [d.headName, d.headDesig, d.headMobile].filter(Boolean).join('\n');
   const sites = d.sites.filter(s=>s.name||s.kw).map((s,i)=>`${bn(i+1)}. ${s.name}: ${s.kw} কিলোওয়াট`).join('\n');
-  const top = d.top3.filter(b=>b.name||b.share).map((b,i)=>`${bn(i+1)}. ${b.name} — ${b.share}%`).join('\n');
+  const top = d.top3.map((b,i)=>(b.name||b.share) ? `${bn(i+1)}. ${b.name||'(নাম দেওয়া হয়নি)'}${b.share!==''?` — ${b.share}%`:''}` : '').filter(Boolean).join('\n');
   return [
     {t:'জেলা', s:0, rows:[['জেলা', ds.bn?`${ds.bn} (${ds.en})`:'']]},
     {t:'দপ্তরের তথ্য', s:1, rows:[['উপজেলা',d.upazila],['দপ্তর/অফিসের নাম',d.office],['মন্ত্রণালয়/বিভাগ',d.ministry]]},
