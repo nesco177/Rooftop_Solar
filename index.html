@@ -332,8 +332,8 @@ const STEPS = [
   { title:'বিনিয়োগকারী',
     render:()=>`<h2>বিনিয়োগকারীর তথ্য</h2><p class="sub">দরপত্র জমাদানকারী সংখ্যা এবং মূল্যায়নে নির্বাচিত প্রথম তিনজনের ছাদ ভাড়া বাবদ অফার করা % শেয়ার।</p>`
       + field('bidderCount','কতজন বিনিয়োগকারি দরপত্র জমা প্রদান করেছেন',inp('bidderCount',{mode:'numeric',ph:'যেমন: ৫'}),{req:1, hint:'কেউ দরপত্র জমা না দিলে ০ লিখুন'})
-      + `<div style="font-weight:600;margin:8px 0 4px;font-size:.95rem">নির্বাচিত প্রথম তিনজন — ছাদ ভাড়া বাবদ কে কত % শেয়ার অফার করেছেন (ঐচ্ছিক)</div>
-         <div class="hint" style="margin-bottom:8px">এই ঘরগুলো পূরণ করা বাধ্যতামূলক নয়। তথ্য না থাকলে খালি রাখুন।</div>`
+      + `<div style="font-weight:600;margin:8px 0 4px;font-size:.95rem">নির্বাচিত প্রথম তিনজন — ছাদ ভাড়া বাবদ কে কত % শেয়ার অফার করেছেন</div>
+         <div class="hint" style="margin-bottom:8px">তথ্য না থাকলে খালি রাখুন।</div>`
       + state.data.top3.map((b,i)=>`<div class="bidder"><div class="tag">${['প্রথম','দ্বিতীয়','তৃতীয়'][i]} বিনিয়োগকারী</div><div class="row2">`
           + field(`top3.${i}.name`,'প্রতিষ্ঠানের নাম',inpA('top3',i,'name'))
           + field(`top3.${i}.share`,'অফার (%)',inpA('top3',i,'share',{mode:'decimal',ph:'যেমন: ১২.৫'}))
